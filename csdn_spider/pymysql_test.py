@@ -1,10 +1,10 @@
 import pymysql.cursors
 
 # Connect to the database
-connection = pymysql.connect(host='localhost',
+connection = pymysql.connect(host='192.168.1.142',
                              user='root',
-                             password='root',
-                             db='spider',
+                             password='erp-888888',
+                             db='petgoodsdb',
                              charset='utf8mb4',
                              cursorclass=pymysql.cursors.DictCursor)
 

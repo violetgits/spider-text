@@ -15,7 +15,7 @@ class Person(Model):
 
 if __name__ == "__main__":
     # db.create_tables([Person])
-    from datetime import date
+    # from datetime import date
 
     #生成数据
     # uncle_bob = Person(name='Bob', birthday=date(1960, 1, 15))
