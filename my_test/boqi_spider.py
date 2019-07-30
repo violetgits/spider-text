@@ -37,7 +37,7 @@ def get_goods_info():
                 if c_href:
                     try:
                         save_goods_info(c_href)
-                    except IOError:
+                    except:
                         continue
         else:
             break
@@ -84,19 +84,28 @@ def save_goods_info(c_href):
     # 分类
     shop_category = shop_sel_info_list.xpath('string(//*[@id="content"]/div[1]/div)').get()
     #获取最后一个标签
-    shop_category_last = shop_sel_info_list.xpath('string(//*[@id="content"]/div[1]/div/a[5])').get()
+    shop_category_last = shop_sel_info_list.xpath('string(//*[@id="content"]/div[1]/div/a[last()])').get()
     shop_category_str = re.sub("\s", "", shop_category)
+    shop_category_str1 = re.sub("\*", "1", shop_category_str)
+    shop_category_str2 = re.sub("\+", "1", shop_category_str1)
+    shop_category_str3 = re.sub("\(", "1", shop_category_str2)
+    shop_category_str4 = re.sub("\)", "1", shop_category_str3)
+    #去除正则匹配符
     shop_category_str_last = re.sub("\s", "", shop_category_last)
+    shop_category_str_last1 = re.sub("\*", "1", shop_category_str_last)
+    shop_category_str_last2 = re.sub("\+", "1", shop_category_str_last1)
+    shop_category_str_last3 = re.sub("\(", "1", shop_category_str_last2)
+    shop_category_str_last4 = re.sub("\)", "1", shop_category_str_last3)
     #去除最后一个商品名字在商品分类里
-    shop_category_str_re = re.sub(">"+shop_category_str_last+">", "", shop_category_str)
+    shop_category_str_re = re.sub(">"+shop_category_str_last4+">", "", shop_category_str4)
     print(shop_category_str_re)
     print("------------------------")
-    # with connection.cursor() as cursor:
-    #     # Create a new record
-    #     sql = "INSERT INTO `boqi_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `ggbz`, `category`, `sales_num`, `weight`) " \
-    #           "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-    #     cursor.execute(sql, (now_time, c_href_str, shop_sku, shop_name_str, shop_brand, shop_price_str, shop_point_str, shop_ggbz, shop_category_str, shop_sales_num_str, shop_weight))
-    #     connection.commit()
+    with connection.cursor() as cursor:
+        # Create a new record
+        sql = "INSERT INTO `boqi_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `ggbz`, `category`, `sales_num`, `weight`) " \
+              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(sql, (now_time, c_href_str, shop_sku, shop_name_str, shop_brand, shop_price_str, shop_point_str, shop_ggbz, shop_category_str_re, shop_sales_num_str, shop_weight))
+        connection.commit()
 
 
 try:
