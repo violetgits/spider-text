@@ -84,19 +84,21 @@ def save_goods_info(c_href):
     # 分类
     shop_category = shop_sel_info_list.xpath('string(//*[@id="content"]/div[1]/div)').get()
     shop_category_str = re.sub("\s", "", shop_category)
-    print(shop_category_str)
+    shop_name_re = re.sub("\s", "", shop_name_str)
+    shop_category_str_re = re.sub('>' + shop_name_re + '>', "", shop_category_str)
+    print(shop_category_str_re)
     print("------------------------")
     with connection.cursor() as cursor:
         # Create a new record
         sql = "INSERT INTO `boqi_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `ggbz`, `category`, `sales_num`, `weight`) " \
               "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(sql, (now_time, c_href_str, shop_sku, shop_name_str, shop_brand, shop_price_str, shop_point_str, shop_ggbz, shop_category_str, shop_sales_num_str, shop_weight))
+        cursor.execute(sql, (now_time, c_href_str, shop_sku, shop_name_str, shop_brand, shop_price_str, shop_point_str, shop_ggbz, shop_category_str_re, shop_sales_num_str, shop_weight))
         connection.commit()
 
 
 try:
     # 获取首页分类，目前只获取狗和猫
-    for a in range(2,4):
+    for a in range(2, 4):
         home_tags = sel.xpath('//*[@id="nav"]/div/div[2]/a[' + str(a) + ']').extract()
         for text in home_tags:
             a_href = re.search('href="(.*?)"', text)
