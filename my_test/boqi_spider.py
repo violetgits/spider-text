@@ -23,6 +23,70 @@ connection = pymysql.connect(host='192.168.1.142',
                              charset='utf8mb4',
                              cursorclass=pymysql.cursors.DictCursor)
 
+
+def get_goods_info():
+    for n in range(1, 100):
+        b_href_str_1 = b_href_str + "-p" + str(n) + ".html"
+        # 获取商品列表
+        shop_list = requests.get(b_href_str_1, headers=headers)
+        shop_sel_list = Selector(text=shop_list.text)
+        shop_tags = shop_sel_list.xpath('//*[@id="listcontent"]/div[2]/div[3]/div/ul/li/div[2]/a').extract()
+        if shop_tags:
+            for text2 in shop_tags:
+                c_href = re.search('href="(.*?)"', text2)
+                if c_href:
+                    c_href_str = c_href.group(1).replace("null", "None")
+                    # 获取商品信息
+                    shop_info_list = requests.get(c_href_str, headers=headers)
+                    shop_sel_info_list = Selector(text=shop_info_list.text)
+                    # 当前日期
+                    print(now_time)
+                    # 数据来源
+                    print(c_href_str)
+                    # sku
+                    shop_sku = shop_sel_info_list.xpath('//*[contains(text(),"商品编号")]/span/text()').get()
+                    print(shop_sku)
+                    # 商品名称
+                    shop_name = shop_sel_info_list.xpath('//*[@id="content"]/div[2]/div[1]/div[2]/div[1]/input[@id="goodname"]').get()
+                    shop_name_str = re.search('value="(.*?)"', shop_name).group(1)
+                    print(shop_name_str)
+                    # 厂商
+                    # 品牌
+                    shop_brand = shop_sel_info_list.xpath('//*[@id="content"]/div[2]/div[1]/div[3]/div[2]/dl[1]/dd/a/text()').get()
+                    print(shop_brand)
+                    # 商品价格
+                    shop_price = shop_sel_info_list.xpath('//*[@id="bqPrice"]/text()').get()
+                    shop_price_str = re.search('¥(\S*)', shop_price).group(1)
+                    print(shop_price_str)
+                    # 评分
+                    shop_point = shop_sel_info_list.xpath('//*[@id="content"]/div[2]/div[1]/div[3]/div[2]/dl[4]/dd/div[1]/em/text()').get()
+                    shop_point_str = re.search('(.*)分', shop_point).group(1)
+                    print(shop_point_str)
+                    # 规格包装
+                    shop_ggbz = shop_sel_info_list.xpath('//*[contains(text(),"商品规格")]/span/text()').get()
+                    print(shop_ggbz)
+                    # 销量
+                    shop_sales_num = shop_sel_info_list.xpath('//*[@id="content"]/div[2]/div[1]/div[3]/div[2]/dl[3]/dd/text()').get()
+                    shop_sales_num_str = re.search('(.*)件', shop_sales_num).group(1)
+                    print(shop_sales_num_str)
+                    # 重量
+                    shop_weight = shop_sel_info_list.xpath('//*[contains(text(),"重量")]/span/text()').get()
+                    print(shop_weight)
+                    # 分类
+                    shop_category = shop_sel_info_list.xpath('string(//*[@id="content"]/div[1]/div)').get()
+                    shop_category_str = re.sub("\s", "", shop_category)
+                    print(shop_category_str)
+                    print("------------------------")
+                    with connection.cursor() as cursor:
+                        # Create a new record
+                        sql = "INSERT INTO `boqi_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `ggbz`, `category`, `sales_num`, `weight`) " \
+                              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                        cursor.execute(sql, (now_time, c_href_str, shop_sku, shop_name_str, shop_brand, shop_price_str, shop_point_str, shop_ggbz, shop_category_str, shop_sales_num_str, shop_weight))
+                        connection.commit()
+        else:
+            break
+
+
 try:
     # 获取首页分类，目前只获取狗和猫
     for a in range(2,4):
@@ -34,71 +98,12 @@ try:
                 # 获取单个分类的商品分类
                 res_list = requests.get(a_href_str, headers=headers)
                 sel_list = Selector(text=res_list.text)
-                dog_tags = sel_list.xpath('//*[@id="channel"]/div[2]/a[1]').extract()
+                dog_tags = sel_list.xpath('//*[@id="channel"]/div[2]/a').extract()
                 for text1 in dog_tags:
                     b_href = re.search('href="(.*?)\.html"', text1)
                     if b_href:
                         b_href_str = b_href.group(1).replace("null", "None")
                         # 分页
-                        for n in range(1, 100):
-                            b_href_str_1 = b_href_str + "-p" + str(n) + ".html"
-                            # 获取商品列表
-                            shop_list = requests.get(b_href_str_1, headers=headers)
-                            shop_sel_list = Selector(text=shop_list.text)
-                            shop_tags = shop_sel_list.xpath('//*[@id="listcontent"]/div[2]/div[3]/div/ul/li/div[2]/a').extract()
-                            if shop_tags:
-                                for text2 in shop_tags:
-                                    c_href = re.search('href="(.*?)"', text2)
-                                    if c_href:
-                                        c_href_str = c_href.group(1).replace("null", "None")
-                                        # 获取商品信息
-                                        shop_info_list = requests.get(c_href_str, headers=headers)
-                                        shop_sel_info_list = Selector(text=shop_info_list.text)
-                                        # 当前日期
-                                        print(now_time)
-                                        # 数据来源
-                                        print(c_href_str)
-                                        # sku
-                                        shop_sku = shop_sel_info_list.xpath('//*[contains(text(),"商品编号")]/span/text()').get()
-                                        print(shop_sku)
-                                        # 商品名称
-                                        shop_name = shop_sel_info_list.xpath('//*[@id="content"]/div[2]/div[1]/div[2]/div[1]/input[@id="goodname"]').get()
-                                        shop_name_str = re.search('value="(.*?)"', shop_name).group(1)
-                                        print(shop_name_str)
-                                        # 厂商
-                                        # 品牌
-                                        shop_brand = shop_sel_info_list.xpath('//*[@id="content"]/div[2]/div[1]/div[3]/div[2]/dl[1]/dd/a/text()').get()
-                                        print(shop_brand)
-                                        # 商品价格
-                                        shop_price = shop_sel_info_list.xpath('//*[@id="bqPrice"]/text()').get()
-                                        shop_price_str = re.search('¥(\S*)', shop_price).group(1)
-                                        print(shop_price_str)
-                                        # 评分
-                                        shop_point = shop_sel_info_list.xpath('//*[@id="content"]/div[2]/div[1]/div[3]/div[2]/dl[4]/dd/div[1]/em/text()').get()
-                                        shop_point_str = re.search('(.*)分', shop_point).group(1)
-                                        print(shop_point_str)
-                                        # 规格包装
-                                        shop_ggbz = shop_sel_info_list.xpath('//*[contains(text(),"商品规格")]/span/text()').get()
-                                        print(shop_ggbz)
-                                        # 销量
-                                        shop_sales_num = shop_sel_info_list.xpath('//*[@id="content"]/div[2]/div[1]/div[3]/div[2]/dl[3]/dd/text()').get()
-                                        shop_sales_num_str = re.search('(.*)件', shop_sales_num).group(1)
-                                        print(shop_sales_num_str)
-                                        # 重量
-                                        shop_weight = shop_sel_info_list.xpath('//*[contains(text(),"重量")]/span/text()').get()
-                                        print(shop_weight)
-                                        # 分类
-                                        shop_category = shop_sel_info_list.xpath('string(//*[@id="content"]/div[1]/div)').get()
-                                        shop_category_str = re.sub("\s","",shop_category)
-                                        print(shop_category_str)
-                                        print("------------------------")
-                                        with connection.cursor() as cursor:
-                                            # Create a new record
-                                            sql = "INSERT INTO `boqi_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `ggbz`, `category`, `sales_num`, `weight`) " \
-                                                  "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                                            cursor.execute(sql, (now_time, c_href_str, shop_sku, shop_name_str, shop_brand, shop_price_str, shop_point_str, shop_ggbz,shop_category_str,shop_sales_num_str,shop_weight))
-                                            connection.commit()
-                            else:
-                                break
+                        get_goods_info()
 finally:
     connection.close()
