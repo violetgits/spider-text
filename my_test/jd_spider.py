@@ -14,7 +14,7 @@ headers = {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
     "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
 }
-now_time = datetime.datetime.now()
+now_time = datetime.date.today()
 
 
 # 循环商品分类获取页面
@@ -30,7 +30,7 @@ def get_goods_page_list(count, goods_list_html):
     goods_list_sel = Selector(text=goods_list_html)
     # 获取共多少页
     goods_list_page_num = goods_list_sel.xpath('//*[@id="J_bottomPage"]/span[2]/em[contains(text(),"共")]/b/text()').get()
-    if count > goods_list_page_num:
+    if count > int(goods_list_page_num):
         return
     print(count)
     print("第" + str(count) + "页,本分类共：" + str(goods_list_page_num) + "页")
@@ -41,7 +41,7 @@ def get_goods_page_list(count, goods_list_html):
             get_goods_item(url_goods)
         except:
             print("error:该url:{}出现错误！",format(url_goods))
-            break
+            continue
     # 获取下一页的链接
     next_page_url_xpath = goods_list_sel.xpath('//*[@id="J_bottomPage"]/span[1]/a[@class="pn-next"]/@href').get()
     next_page_url = "https://list.jd.com" + next_page_url_xpath
