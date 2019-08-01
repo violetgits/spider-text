@@ -4,9 +4,9 @@ import re
 import datetime
 import json
 import pymysql.cursors
-import fake_useragent
+from fake_useragent import UserAgent
 
-ua = fake_useragent.UserAgent(path='/Users/wangchao/PycharmProjects/resources/spider/my_test/useragent.json')
+ua = UserAgent(path='/Users/wangchao/PycharmProjects/resources/spider/my_test/useragent.json')
 headers = {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
     "User-Agent": str(ua.random)

@@ -4,7 +4,7 @@ import re
 import datetime
 import json
 import pymysql.cursors
-import fake_useragent
+from fake_useragent import UserAgent
 
 # goods_category_list = {'https://list.jd.com/list.html?cat=6994,6995', 'https://list.jd.com/list.html?cat=6994,6996'
 #     , 'https://list.jd.com/list.html?cat=6994,6997', 'https://list.jd.com/list.html?cat=6994,6998'
@@ -12,7 +12,7 @@ import fake_useragent
 #     , 'https://list.jd.com/list.html?cat=6994,7001'}
 goods_category_list = {'https://list.jd.com/list.html?cat=6994,6995'}
 
-ua = fake_useragent.UserAgent(path='/Users/wangchao/PycharmProjects/resources/spider/my_test/useragent.json')
+ua = UserAgent(path='/Users/wangchao/PycharmProjects/resources/spider/my_test/useragent.json')
 now_time = datetime.date.today()
 ip_list = []
 
