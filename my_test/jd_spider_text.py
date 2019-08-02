@@ -18,18 +18,11 @@ now_time = datetime.date.today()
 
 # 循环商品分类获取页面
 def get_goods_list():
-    for url in goods_category_list:
-        count = 1
-        goods_list_html = get_html(url, url)
-        get_goods_page_list(count, goods_list_html)
-        # while 1:
-        #     try:
-        #         goods_list_html = get_html(url, url)
-        #         get_goods_page_list(count, goods_list_html)
-        #         break
-        #     except Exception as e:
-        #         print("循环商品分类获取页面,正在重试,error{}".format(e))
-        #         continue
+    # for url in goods_category_list:
+    url = 'https://list.jd.com/list.html?cat=6994,6995&page=2'
+    count = 1
+    goods_list_html = get_html(url, url)
+    get_goods_page_list(count, goods_list_html)
 
 
 # 递归实现分页
@@ -43,15 +36,15 @@ def get_goods_page_list(count, goods_list_html):
     # 获取当前页的商品列表
     page_goods_list_url = goods_list_sel.xpath('//*[@id="plist"]/ul/li/div/div[4]/a/@href').extract()
     goods_count = 1
-    for url_goods in page_goods_list_url:
-        get_goods_item(url_goods, count, goods_count)
-        goods_count += 1
+    # for url_goods in page_goods_list_url:
+    get_goods_item(page_goods_list_url[16], count, goods_count)
+    goods_count += 1
     # 获取下一页的链接
     next_page_url_xpath = goods_list_sel.xpath('//*[@id="J_bottomPage"]/span[1]/a[@class="pn-next"]/@href').get()
     next_page_url = "https://list.jd.com" + next_page_url_xpath
     print("下一页：{}".format(next_page_url))
     count += 1
-    get_goods_page_list(count, get_html(next_page_url, next_page_url))
+    # get_goods_page_list(count, get_html(next_page_url, next_page_url))
 
 
 # 进入商品详情页
