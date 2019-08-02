@@ -5,12 +5,12 @@ from bs4 import BeautifulSoup
 import pymysql.cursors
 import re
 
-for a in range(1, 100):
+for a in range(100, 150):
     s = requests.session()
     header = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"
     }
-    rs = s.get(url="http://www.xicidaili.com/nn/" + str(a), headers=header)
+    rs = s.get(url="https://www.xicidaili.com/nn/" + str(a), headers=header)
     soup = BeautifulSoup(rs.text, "lxml")
     print(rs.text)
     ip_list_all = []
