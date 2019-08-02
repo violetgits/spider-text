@@ -5,57 +5,68 @@ import datetime
 import json
 import pymysql.cursors
 from fake_useragent import UserAgent
-import random
 
-# goods_category_list = {'https://list.jd.com/list.html?cat=6994,6995', 'https://list.jd.com/list.html?cat=6994,6996'
-#     , 'https://list.jd.com/list.html?cat=6994,6997', 'https://list.jd.com/list.html?cat=6994,6998'
-#     , 'https://list.jd.com/list.html?cat=6994,6999', 'https://list.jd.com/list.html?cat=6994,7000'
-#     , 'https://list.jd.com/list.html?cat=6994,7001'}
-goods_category_list = {'https://list.jd.com/list.html?cat=6994,6995'}
+# from concurrent.futures import ThreadPoolExecutor
+
+goods_category_list = {'https://list.jd.com/list.html?cat=6994,6995', 'https://list.jd.com/list.html?cat=6994,6996'
+    , 'https://list.jd.com/list.html?cat=6994,6997', 'https://list.jd.com/list.html?cat=6994,6998'
+    , 'https://list.jd.com/list.html?cat=6994,6999', 'https://list.jd.com/list.html?cat=6994,7000'
+    , 'https://list.jd.com/list.html?cat=6994,7001'}
 ua = UserAgent(path='/Users/wangchao/PycharmProjects/resources/spider/my_test/useragent.json')
 now_time = datetime.date.today()
 
 
 # 循环商品分类获取页面
-def get_goods_list():
-    for url in goods_category_list:
-        count = 1
-        goods_list_html = get_html(url, url)
-        get_goods_page_list(count, goods_list_html)
-        # while 1:
-        #     try:
-        #         goods_list_html = get_html(url, url)
-        #         get_goods_page_list(count, goods_list_html)
-        #         break
-        #     except Exception as e:
-        #         print("循环商品分类获取页面,正在重试,error{}".format(e))
-        #         continue
+def get_goods_list(url, m, n):
+    connection = pymysql.connect(host='192.168.1.142',
+                                 user='root',
+                                 password='erp-888888',
+                                 db='petgoodsdb',
+                                 charset='utf8mb4',
+                                 cursorclass=pymysql.cursors.DictCursor)
+    try:
+        # for url in goods_category_list:
+        for a in range(int(m), int(n)):
+            count = int(a)
+            goods_page_count = 1
+            while 1:
+                goods_page_count += 1
+                try:
+                    goods_list_html = get_html(url + "&page=" + str(a), url)
+                    get_goods_page_list(count, goods_list_html, connection)
+                    break
+                except Exception as e:
+                    print("商品分页正在重试,次数:{},error{}".format(goods_page_count, e))
+                    if goods_page_count > 50:
+                        break
+                    else:
+                        continue
+    finally:
+        connection.close()
 
 
 # 递归实现分页
-def get_goods_page_list(count, goods_list_html):
+def get_goods_page_list(count, goods_list_html, connection):
     goods_list_sel = Selector(text=goods_list_html)
     # 获取共多少页
     goods_list_page_num = goods_list_sel.xpath('//*[@id="J_bottomPage"]/span[2]/em[contains(text(),"共")]/b/text()').get()
-    if count > int(goods_list_page_num):
-        return
     print("第" + str(count) + "页,本分类共：" + str(goods_list_page_num) + "页")
     # 获取当前页的商品列表
     page_goods_list_url = goods_list_sel.xpath('//*[@id="plist"]/ul/li/div/div[4]/a/@href').extract()
     goods_count = 1
     for url_goods in page_goods_list_url:
-        get_goods_item(url_goods, count, goods_count)
+        get_goods_item(url_goods, count, goods_count, connection)
         goods_count += 1
-    # 获取下一页的链接
-    next_page_url_xpath = goods_list_sel.xpath('//*[@id="J_bottomPage"]/span[1]/a[@class="pn-next"]/@href').get()
-    next_page_url = "https://list.jd.com" + next_page_url_xpath
-    print("下一页：{}".format(next_page_url))
     count += 1
-    get_goods_page_list(count, get_html(next_page_url, next_page_url))
+    # # 获取下一页的链接
+    # next_page_url_xpath = goods_list_sel.xpath('//*[@id="J_bottomPage"]/span[1]/a[@class="pn-next"]/@href').get()
+    # next_page_url = "https://list.jd.com" + next_page_url_xpath
+    # print("下一页：{}".format(next_page_url))
+    # get_goods_page_list(count, get_html(next_page_url, next_page_url), connection)
 
 
 # 进入商品详情页
-def get_goods_item(url, page_count, goods_count):
+def get_goods_item(url, page_count, goods_count, connection):
     item_url = "https:" + url
     item_url_count = 0
     while 1:
@@ -63,7 +74,8 @@ def get_goods_item(url, page_count, goods_count):
         item_url_count += 1
         try:
             goods_detail_html = get_html(item_url, item_url)
-            save_database(goods_detail_html, item_url)
+            save_database(goods_detail_html, item_url, connection)
+            print("------------------")
             break
         except Exception as e:
             print("进入当前页,正在重试,次数:{},error{}".format(item_url_count, e))
@@ -74,14 +86,13 @@ def get_goods_item(url, page_count, goods_count):
 
 
 # 存入数据库
-def save_database(goods_detail_html, item_url):
+def save_database(goods_detail_html, item_url, connection):
     goods_detail_sel = Selector(text=goods_detail_html)
     try:
         date_list = get_goods_detail_info(goods_detail_sel, item_url)
         print("存入数据库：{}".format(date_list))
         with connection.cursor() as cursor:
-            sql = "INSERT INTO `jd_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `ggbz`, `category`, `sales_num`, `weight`) " \
-                  "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            sql = "INSERT INTO `jd_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `category`, `sales_num`, `weight`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             cursor.execute(sql, date_list)
             connection.commit()
     except Exception as e:
@@ -138,11 +149,6 @@ def get_goods_detail_info(goods_detail_sel, item_url):
                 break
             else:
                 continue
-    # 规格包装
-    goods_ggbz_html = goods_detail_sel.xpath('//*[@id="choose-attr-2"]/div[2]/div[3]/a/text()').get()
-    goods_ggbz = ""
-    if goods_ggbz_html:
-        goods_ggbz = re.sub('\s', '', goods_ggbz_html)
     # 重量
     goods_weight = goods_detail_sel.xpath('//*[@id="detail"]/div[2]/div[1]/div[1]/ul[2]/li[contains(text(),"商品毛重")]/@title').get()
     # 分类
@@ -157,9 +163,7 @@ def get_goods_detail_info(goods_detail_sel, item_url):
             goods_category = "海囤全球" + ">" + goods_category2
         else:
             goods_category = "无"
-    date_list = (now_time, item_url, sku, goods_name, goods_brand, goods_price, goods_point, goods_ggbz, goods_category, shop_sales_num, goods_weight)
-    print(date_list)
-    print("------------------")
+    date_list = (now_time, item_url, sku, goods_name, goods_brand, goods_price, goods_point, goods_category, shop_sales_num, goods_weight)
     return date_list
 
 
@@ -170,8 +174,8 @@ def get_html(url, referer):
     proxyPort = "9020"
 
     # 代理隧道验证信息
-    proxyUser = "H58G6G30137G865D"
-    proxyPass = "043F1F63DA9899C8"
+    proxyUser = "HJK05V4Q9610L73D"
+    proxyPass = "48DAAA8CD577EF3E"
 
     proxyMeta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
         "host": proxyHost,
@@ -179,15 +183,16 @@ def get_html(url, referer):
         "user": proxyUser,
         "pass": proxyPass,
     }
-    #
-    # proxies = {
-    #     "http": proxyMeta,
-    #     "https": proxyMeta,
-    # }
-    proxies_str = ip_list[random.choice(range(0, len(ip_list)))]
+
     proxies = {
-        proxies_str['type']: proxies_str['ip'] + ":" + str(proxies_str['port']),
+        "http": proxyMeta,
+        "https": proxyMeta,
     }
+    # proxies_str = ip_list[random.choice(range(0, len(ip_list)))]
+    # proxies = {
+    #     "http": str(proxies_str['ip']).lower(),
+    #     "https": str(proxies_str['ip']).lower(),
+    # }
 
     if referer:
         headers = {
@@ -198,30 +203,31 @@ def get_html(url, referer):
         headers = {
             "User-Agent": ua.random,
         }
-    print("代理IP：{}".format(proxies))
-    resp = requests.get(url, headers=headers, proxies=proxies)
+    # print("代理IP：{}".format(proxies))
+    resp = requests.get(url, headers=headers, proxies=proxies, timeout=5)
     return resp.text
 
 
-def get_ip_list():
-    with connection.cursor() as cursor:
-        sql = 'select `ip`,`port`,`type` from xici'
-        cursor.execute(sql)
-        connection.commit()
-        return cursor.fetchall()
+# def get_ip_list():
+#     with connection.cursor() as cursor:
+#         sql = 'select `ip`,`port`,`type` from xici'
+#         cursor.execute(sql)
+#         connection.commit()
+#         return cursor.fetchall()
 
 
 if __name__ == "__main__":
-    connection = pymysql.connect(host='192.168.1.142',
-                                 user='root',
-                                 password='erp-888888',
-                                 db='petgoodsdb',
-                                 charset='utf8mb4',
-                                 cursorclass=pymysql.cursors.DictCursor)
-    try:
-        ip_list = get_ip_list()
-        print(ip_list)
-        print(len(ip_list))
-        get_goods_list()
-    finally:
-        connection.close()
+    # ip_list = get_ip_list()
+    # print(ip_list)
+    # print(len(ip_list))
+    get_goods_list('https://list.jd.com/list.html?cat=6994,6996', 2, 10)
+    # executor = ThreadPoolExecutor(max_workers=7)
+    # for url in goods_category_list:
+    #     print("该url：{}的线程启动了！".format(url))
+    #     executor.submit(get_goods_list, url)
+    # todo 分析这个为啥error
+    # ------------------
+    # 当前第2页第60个，进入：https://item.jd.com/3902504.html
+    # 开始下载url: https://item.jd.com/3902504.html
+    # 存入数据库error, 出现错误！expected string or bytes - like object
+    # ------------------

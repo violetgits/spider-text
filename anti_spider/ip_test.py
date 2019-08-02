@@ -9,6 +9,7 @@ import requests
 from scrapy import Selector
 import pymysql.cursors
 import random
+import time
 
 
 def get_html(url, ips):
@@ -18,8 +19,8 @@ def get_html(url, ips):
     proxyPort = "9020"
 
     # 代理隧道验证信息
-    proxyUser = "H58G6G30137G865D"
-    proxyPass = "043F1F63DA9899C8"
+    proxyUser = "HJK05V4Q9610L73D"
+    proxyPass = "48DAAA8CD577EF3E"
 
     proxyMeta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
         "host": proxyHost,
@@ -28,8 +29,17 @@ def get_html(url, ips):
         "pass": proxyPass,
     }
 
+
+    # proxies = {
+    #     # str(ips['type']).lower(): str(ips['ip_str']).lower(),
+    #     "http": str(ips['ip_str']).lower(),
+    #     "https": str(ips['ip_str']).lower(),
+    #
+    # }
+
     proxies = {
-        ips['type']: ips['ip'] + ":" + str(ips['port']),
+        "http": proxyMeta,
+        "https": proxyMeta,
     }
     from fake_useragent import UserAgent
     ua = UserAgent(path='/Users/wangchao/PycharmProjects/resources/spider/my_test/useragent.json')
@@ -37,7 +47,7 @@ def get_html(url, ips):
         "User-Agent": ua.random
     }
     print(proxies)
-    resp = requests.get(url, headers=headers, proxies=proxies)
+    resp = requests.get(url, headers=headers, proxies=proxies, timeout=2)
     return resp
 
 
@@ -52,7 +62,7 @@ def get_ip_list():
                                  charset='utf8mb4',
                                  cursorclass=pymysql.cursors.DictCursor)
     with connection.cursor() as cursor:
-        sql = 'select `ip`,`port`,`type` from xici'
+        sql = 'select `ip`,`ip_str`,`port`,`type` from xici limit 16'
         cursor.execute(sql)
         connection.commit()
         return cursor.fetchall()
@@ -82,8 +92,24 @@ def method_name():
                     continue
 
 
+def ip_daili():
+    pass
+    url = 'http://200019.ip138.com/'
+    html_str = get_html(url, ip_list[random.choice(range(0, len(ip_list)))]).text
+    job_sel = Selector(text=html_str)
+    ip_syr = job_sel.xpath("//title/text()").get()
+    print(ip_syr)
+
+
 if __name__ == "__main__":
     ip_list = get_ip_list()
     print(len(ip_list))
-    print(ip_list)
+    # print(ip_list)
+    while 1:
+        try:
+            ip_daili()
+            time.sleep(1)
+        except Exception as e:
+            print(e)
+            pass
     # method_name()
