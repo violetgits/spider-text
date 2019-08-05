@@ -88,16 +88,22 @@ def get_goods_item(url, page_count, goods_count, connection):
 # 存入数据库
 def save_database(goods_detail_html, item_url, connection):
     goods_detail_sel = Selector(text=goods_detail_html)
-    try:
-        date_list = get_goods_detail_info(goods_detail_sel, item_url)
-        print("存入数据库：{}".format(date_list))
-        with connection.cursor() as cursor:
-            sql = "INSERT INTO `jd_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `category`, `sales_num`, `weight`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            cursor.execute(sql, date_list)
-            connection.commit()
-    except Exception as e:
-        print("存入数据库error,出现错误！{0}".format(e))
-        pass
+    save_database__count = 0
+    while 1:
+        save_database__count += 1
+        try:
+            date_list = get_goods_detail_info(goods_detail_sel, item_url)
+            print("存入数据库,数据列表：{}".format(date_list))
+            with connection.cursor() as cursor:
+                sql = "INSERT INTO `jd_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `category`, `sales_num`, `weight`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                cursor.execute(sql, date_list)
+                connection.commit()
+        except Exception as e:
+            print("存入数据库error,重试次数：{0},错误！{1}".format(save_database__count, e))
+            if save_database__count > 10:
+                break
+            else:
+                continue
 
 
 # 获取商品数据
@@ -204,7 +210,7 @@ def get_html(url, referer):
             "User-Agent": ua.random,
         }
     # print("代理IP：{}".format(proxies))
-    resp = requests.get(url, headers=headers, proxies=proxies, timeout=5)
+    resp = requests.get(url, headers=headers, timeout=5)
     return resp.text
 
 
@@ -220,7 +226,7 @@ if __name__ == "__main__":
     # ip_list = get_ip_list()
     # print(ip_list)
     # print(len(ip_list))
-    get_goods_list('https://list.jd.com/list.html?cat=6994,6996', 2, 10)
+    # get_goods_list('https://list.jd.com/list.html?cat=6994,6996', 2, 10)
     # executor = ThreadPoolExecutor(max_workers=7)
     # for url in goods_category_list:
     #     print("该url：{}的线程启动了！".format(url))
@@ -231,3 +237,8 @@ if __name__ == "__main__":
     # 开始下载url: https://item.jd.com/3902504.html
     # 存入数据库error, 出现错误！expected string or bytes - like object
     # ------------------
+    item_url = 'https://item.jd.com/3902504.html'
+    goods_detail_html = get_html(item_url, item_url)
+    goods_detail_sel = Selector(text=goods_detail_html)
+    date_list = get_goods_detail_info(goods_detail_sel, item_url)
+    print(date_list)
