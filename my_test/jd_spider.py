@@ -226,19 +226,9 @@ if __name__ == "__main__":
     # ip_list = get_ip_list()
     # print(ip_list)
     # print(len(ip_list))
-    # get_goods_list('https://list.jd.com/list.html?cat=6994,6996', 2, 10)
+    get_goods_list('https://list.jd.com/list.html?cat=6994,6996', 2, 10)
     # executor = ThreadPoolExecutor(max_workers=7)
     # for url in goods_category_list:
     #     print("该url：{}的线程启动了！".format(url))
     #     executor.submit(get_goods_list, url)
-    # todo 分析这个为啥error
-    # ------------------
-    # 当前第2页第60个，进入：https://item.jd.com/3902504.html
-    # 开始下载url: https://item.jd.com/3902504.html
-    # 存入数据库error, 出现错误！expected string or bytes - like object
-    # ------------------
-    item_url = 'https://item.jd.com/3902504.html'
-    goods_detail_html = get_html(item_url, item_url)
-    goods_detail_sel = Selector(text=goods_detail_html)
-    date_list = get_goods_detail_info(goods_detail_sel, item_url)
-    print(date_list)
+
