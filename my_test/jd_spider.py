@@ -141,7 +141,7 @@ def get_goods_detail_info(goods_detail_sel, item_url):
             else:
                 continue
     # 评分 和 销量
-    shop_sales_num_url = 'https://club.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10'
+    shop_sales_num_url = 'https://club.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10&isShadowSku=0&fold=1'
     shop_sales_num = 0
     goods_point = 0
     goods_point_count = 0
@@ -150,18 +150,19 @@ def get_goods_detail_info(goods_detail_sel, item_url):
         try:
             shop_sales_num_html = get_html(shop_sales_num_url, item_url)
             if shop_sales_num_html:
+                shop_sales_num_html_re = re.search("fetchJSON_comment\((.*)\);", shop_sales_num_html).group(1)
+                shop_sales_num_json = json.loads(shop_sales_num_html_re)
+                shop_sales_num = shop_sales_num_json['productCommentSummary']['commentCount']
+                goods_point = shop_sales_num_json['productCommentSummary']['goodRateShow']
+            else:
                 raise RuntimeError("未取得评价和销量!")
-            shop_sales_num_html_re = re.search("fetchJSON_comment\((.*)\);", shop_sales_num_html).group(1)
-            shop_sales_num_json = json.loads(shop_sales_num_html_re)
-            shop_sales_num = shop_sales_num_json['productCommentSummary']['commentCount']
-            goods_point = shop_sales_num_json['productCommentSummary']['goodRateShow']
             break
         except Exception as e:
             print("评分 和 销量,正在重试,次数：{},error{},{}".format(goods_point_count, e, traceback.print_exc()))
             if (goods_point_count % 2) == 0:
-                shop_sales_num_url = 'https://club.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10'
+                shop_sales_num_url = 'https://club.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10&isShadowSku=0&fold=1'
             else:
-                shop_sales_num_url = 'https://sclub.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10'
+                shop_sales_num_url = 'https://sclub.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10&isShadowSku=0&fold=1'
             if goods_point_count > 50:
                 break
             else:
@@ -183,7 +184,6 @@ def get_goods_detail_info(goods_detail_sel, item_url):
                 goods_category2_count += 1
                 try:
                     goods_category2_html = get_html(goods_category2_url, item_url)
-                    print(goods_category2_html)
                     goods_category2_html_re = re.search("goodsCountry\((.*)\)", goods_category2_html).group(1)
                     goods_category2_json = json.loads(goods_category2_html_re)
                     goods_category2 = goods_category2_json['nationName']
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     # ip_list = get_ip_list()
     # print(ip_list)
     # print(len(ip_list))
-    get_goods_list('https://list.jd.com/list.html?cat=6994,6995', 16, 50)
+    get_goods_list('https://list.jd.com/list.html?cat=6994,6995', 20, 50)
     # executor = ThreadPoolExecutor(max_workers=7)
     # for url in goods_category_list:
     #     get_goods_list(url, 1, 100)
