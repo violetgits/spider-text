@@ -149,6 +149,8 @@ def get_goods_detail_info(goods_detail_sel, item_url):
         goods_point_count += 1
         try:
             shop_sales_num_html = get_html(shop_sales_num_url, item_url)
+            if shop_sales_num_html:
+                raise RuntimeError("未取得评价和销量!")
             shop_sales_num_html_re = re.search("fetchJSON_comment\((.*)\);", shop_sales_num_html).group(1)
             shop_sales_num_json = json.loads(shop_sales_num_html_re)
             shop_sales_num = shop_sales_num_json['productCommentSummary']['commentCount']
@@ -157,9 +159,9 @@ def get_goods_detail_info(goods_detail_sel, item_url):
         except Exception as e:
             print("评分 和 销量,正在重试,次数：{},error{},{}".format(goods_point_count, e, traceback.print_exc()))
             if (goods_point_count % 2) == 0:
-                shop_sales_num_url = 'https://sclub.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10'
-            else:
                 shop_sales_num_url = 'https://club.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10'
+            else:
+                shop_sales_num_url = 'https://sclub.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10'
             if goods_point_count > 50:
                 break
             else:
@@ -175,8 +177,10 @@ def get_goods_detail_info(goods_detail_sel, item_url):
     else:
         if '进口' in goods_name:
             goods_category2_url = 'https://c.3.cn/globalBuy_v2?skuId=1994055251&countryId=1&platformId=1&callback=goodsCountry'
+            goods_category2_count = 0
+            goods_category2 = "暂无产地"
             while 1:
-                goods_category2 += 1
+                goods_category2_count += 1
                 try:
                     goods_category2_html = get_html(goods_category2_url, item_url)
                     print(goods_category2_html)
@@ -185,8 +189,8 @@ def get_goods_detail_info(goods_detail_sel, item_url):
                     goods_category2 = goods_category2_json['nationName']
                     break
                 except Exception as e:
-                    print("商品产地,正在重试,次数：{},error{},{}".format(goods_category2, e, traceback.print_exc()))
-                    if goods_category2 > 50:
+                    print("商品产地,正在重试,次数：{},error{},{}".format(goods_category2_count, e, traceback.print_exc()))
+                    if goods_category2_count > 50:
                         break
                     else:
                         continue
@@ -251,7 +255,7 @@ if __name__ == "__main__":
     # ip_list = get_ip_list()
     # print(ip_list)
     # print(len(ip_list))
-    get_goods_list('https://list.jd.com/list.html?cat=6994,6995', 1, 50)
+    get_goods_list('https://list.jd.com/list.html?cat=6994,6995', 16, 50)
     # executor = ThreadPoolExecutor(max_workers=7)
     # for url in goods_category_list:
     #     get_goods_list(url, 1, 100)
