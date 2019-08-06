@@ -5,14 +5,18 @@ import datetime
 import json
 import pymysql.cursors
 from fake_useragent import UserAgent
+import time
+import random
+import traceback
 
 # from concurrent.futures import ThreadPoolExecutor
 
-goods_category_list = {'https://list.jd.com/list.html?cat=6994,6995', 'https://list.jd.com/list.html?cat=6994,6996'
-    , 'https://list.jd.com/list.html?cat=6994,6997', 'https://list.jd.com/list.html?cat=6994,6998'
-    , 'https://list.jd.com/list.html?cat=6994,6999', 'https://list.jd.com/list.html?cat=6994,7000'
-    , 'https://list.jd.com/list.html?cat=6994,7001'}
-ua = UserAgent(path='/Users/wangchao/PycharmProjects/resources/spider/my_test/useragent.json')
+goods_category_list = {'https://list.jd.com/list.html?cat=6994,6995', 'https://list.jd.com/list.html?cat=6994,6996',
+                       'https://list.jd.com/list.html?cat=6994,6997', 'https://list.jd.com/list.html?cat=6994,6998',
+                       'https://list.jd.com/list.html?cat=6994,6999', 'https://list.jd.com/list.html?cat=6994,7000',
+                       'https://list.jd.com/list.html?cat=6994,7001'}
+# ua = UserAgent(path='/Users/wangchao/PycharmProjects/resources/spider/my_test/useragent.json')
+ua = UserAgent(path='C:/Users/Administrator.SC-201808291900/PycharmProjects/spider-text/my_test/useragent.json')
 now_time = datetime.date.today()
 
 
@@ -36,7 +40,7 @@ def get_goods_list(url, m, n):
                     get_goods_page_list(count, goods_list_html, connection)
                     break
                 except Exception as e:
-                    print("商品分页正在重试,次数:{},error{}".format(goods_page_count, e))
+                    print("商品分页正在重试,次数:{},error{},{}".format(goods_page_count, e, traceback.print_exc()))
                     if goods_page_count > 50:
                         break
                     else:
@@ -78,7 +82,7 @@ def get_goods_item(url, page_count, goods_count, connection):
             print("------------------")
             break
         except Exception as e:
-            print("进入当前页,正在重试,次数:{},error{}".format(item_url_count, e))
+            print("进入当前页,正在重试,次数:{},error{},{}".format(item_url_count, e, traceback.print_exc()))
             if item_url_count > 50:
                 break
             else:
@@ -98,8 +102,9 @@ def save_database(goods_detail_html, item_url, connection):
                 sql = "INSERT INTO `jd_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `category`, `sales_num`, `weight`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 cursor.execute(sql, date_list)
                 connection.commit()
+            break
         except Exception as e:
-            print("存入数据库error,重试次数：{0},错误！{1}".format(save_database__count, e))
+            print("存入数据库error,重试次数：{},错误！{}".format(save_database__count, e, traceback.print_exc()))
             if save_database__count > 10:
                 break
             else:
@@ -130,7 +135,7 @@ def get_goods_detail_info(goods_detail_sel, item_url):
             goods_price = goods_price_json['stock']['jdPrice']['p']
             break
         except Exception as e:
-            print("商品价格,正在重试,次数:{},error{}".format(goods_price_count, e))
+            print("商品价格,正在重试,次数:{},error{},{}".format(goods_price_count, e, traceback.print_exc()))
             if goods_price_count > 50:
                 break
             else:
@@ -150,7 +155,11 @@ def get_goods_detail_info(goods_detail_sel, item_url):
             goods_point = shop_sales_num_json['productCommentSummary']['goodRateShow']
             break
         except Exception as e:
-            print("评分 和 销量,正在重试,次数：{},error{}".format(goods_point_count, e))
+            print("评分 和 销量,正在重试,次数：{},error{},{}".format(goods_point_count, e, traceback.print_exc()))
+            if (goods_point_count % 2) == 0:
+                shop_sales_num_url = 'https://sclub.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10'
+            else:
+                shop_sales_num_url = 'https://club.jd.com/comment/skuProductPageComments.action?callback=fetchJSON_comment&productId=' + sku + '&score=0&sortType=5&page=0&pageSize=10'
             if goods_point_count > 50:
                 break
             else:
@@ -210,6 +219,7 @@ def get_html(url, referer):
             "User-Agent": ua.random,
         }
     # print("代理IP：{}".format(proxies))
+    time.sleep(random.randint(0, 6))
     resp = requests.get(url, headers=headers, timeout=5)
     return resp.text
 
@@ -226,9 +236,7 @@ if __name__ == "__main__":
     # ip_list = get_ip_list()
     # print(ip_list)
     # print(len(ip_list))
-    get_goods_list('https://list.jd.com/list.html?cat=6994,6996', 2, 10)
+    get_goods_list('https://list.jd.com/list.html?cat=6994,6995', 1, 50)
     # executor = ThreadPoolExecutor(max_workers=7)
     # for url in goods_category_list:
-    #     print("该url：{}的线程启动了！".format(url))
-    #     executor.submit(get_goods_list, url)
-
+    #     get_goods_list(url, 1, 100)
