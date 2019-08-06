@@ -174,7 +174,22 @@ def get_goods_detail_info(goods_detail_sel, item_url):
         goods_category = goods_category1 + ">" + goods_category2 + ">" + goods_category3
     else:
         if '进口' in goods_name:
-            goods_category2 = goods_detail_sel.xpath('//*[@id="item-detail"]/div[1]/ul/li[contains(text(),"商品产地：")]/@title').get()
+            goods_category2_url = 'https://c.3.cn/globalBuy_v2?skuId=1994055251&countryId=1&platformId=1&callback=goodsCountry'
+            while 1:
+                goods_category2 += 1
+                try:
+                    goods_category2_html = get_html(goods_category2_url, item_url)
+                    print(goods_category2_html)
+                    goods_category2_html_re = re.search("goodsCountry\((.*)\)", goods_category2_html).group(1)
+                    goods_category2_json = json.loads(goods_category2_html_re)
+                    goods_category2 = goods_category2_json['nationName']
+                    break
+                except Exception as e:
+                    print("商品产地,正在重试,次数：{},error{},{}".format(goods_category2, e, traceback.print_exc()))
+                    if goods_category2 > 50:
+                        break
+                    else:
+                        continue
             goods_category = "海囤全球" + ">" + goods_category2
         else:
             goods_category = "无"
