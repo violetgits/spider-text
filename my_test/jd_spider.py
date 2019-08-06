@@ -92,11 +92,11 @@ def get_goods_item(url, page_count, goods_count, connection):
 # 存入数据库
 def save_database(goods_detail_html, item_url, connection):
     goods_detail_sel = Selector(text=goods_detail_html)
+    date_list = get_goods_detail_info(goods_detail_sel, item_url)
     save_database__count = 0
     while 1:
         save_database__count += 1
         try:
-            date_list = get_goods_detail_info(goods_detail_sel, item_url)
             print("存入数据库,数据列表：{}".format(date_list))
             with connection.cursor() as cursor:
                 sql = "INSERT INTO `jd_goods` (`busi_date`, `data_source`, `sku`, `name`, `brand`, `price`, `point`, `category`, `sales_num`, `weight`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
